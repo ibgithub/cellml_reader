@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+.idea/
+.kiro/
+hodgkin_huxley_output.json
