@@ -1,11 +1,25 @@
+"""
+Modul untuk generate synonym variabel CellML via LLM (Ollama).
+"""
+
 import json
+import re
 import ollama
 
-from prompt import PROMPT_TEMPLATE
+from src.prompt import PROMPT_TEMPLATE
 from config import MODEL_NAME
 
-def generate_synonyms(variable_info, paper_title):
 
+def generate_synonyms(variable_info, paper_title):
+    """Generate synonym untuk satu variabel CellML via LLM.
+
+    Args:
+        variable_info: Dict dengan keys "component", "variable", "unit"
+        paper_title: Judul paper PDF
+
+    Returns:
+        Dict dengan keys "symbolic" dan "textual"
+    """
     prompt = PROMPT_TEMPLATE.format(
         variable=variable_info["variable"],
         component=variable_info["component"],
@@ -40,8 +54,6 @@ def _extract_json(text):
     LLM kadang bungkus JSON dalam ```json ... ``` code block.
     Fungsi ini coba ambil JSON-nya, apapun formatnya.
     """
-    import re
-
     text = text.strip()
 
     # Coba langsung parse (kalau sudah bare JSON)
