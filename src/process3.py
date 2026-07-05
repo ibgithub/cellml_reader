@@ -1,15 +1,30 @@
 """
-Proses 3: Inferensi proses biologi dan lookup ontologi.
+Proses 3: Inferensi proses biologi dan lookup ontologi (format baru).
 
 Input: hasil dari Proses 2 (variabel + kalimat yang ditemukan)
-Output: anotasi terstruktur dengan ID ontologi
+Output: anotasi terstruktur dengan ID ontologi dari CHEBI, GO, FMA
 """
 
 import json
 import ollama
 
 from src.process3_prompt import PROCESS3_PROMPT_TEMPLATE
-from src.ontology_lookup import load_obo_file, search_ontology
+from src.ontology_lookup import search_ontology
+from src.llm_synonym import _extract_json
+
+
+# Hardcode FMA lookup (file FMA sangat besar, hanya butuh beberapa term)
+FMA_LOOKUP = {
+    "intracellular": "FMA:70015",
+    "intracellular space": "FMA:70015",
+    "intracellular compartment": "FMA:70015",
+    "cytoplasm": "FMA:66835",
+    "cytosol": "FMA:66835",
+    "extracellular": "FMA:70022",
+    "extracellular space": "FMA:70022",
+    "extracellular compartment": "FMA:70022",
+    "sarcoplasmic reticulum": "FMA:67905",
+}
 
 
 def run_process3(process2_results, config):
@@ -17,11 +32,10 @@ def run_process3(process2_results, config):
 
     Args:
         process2_results: List dari dict hasil Proses 2
-            Setiap item berisi: component, variable, unit, synonyms, contexts
         config: Dict konfigurasi (model_name, chebi_dict, go_dict)
 
     Returns:
-        List of dict anotasi terstruktur
+        List of dict anotasi terstruktur (format baru)
     """
     annotations = []
 
@@ -36,7 +50,7 @@ def run_process3(process2_results, config):
 
         # Ambil kalimat-kalimat sebagai evidence
         evidence_sentences = []
-        for ctx in contexts[:5]:  # Maksimal 5 kalimat sebagai evidence
+        for ctx in contexts[:5]:  # Maksimal 5 kalimat
             evidence_sentences.append(ctx["sentence"])
 
         # Kalau tidak ada evidence, skip
@@ -45,9 +59,7 @@ def run_process3(process2_results, config):
             continue
 
         # Buat prompt
-        evidence_text = "\n".join(
-            f"- {s}" for s in evidence_sentences
-        )
+        evidence_text = "\n".join(f"- {s}" for s in evidence_sentences)
 
         prompt = PROCESS3_PROMPT_TEMPLATE.format(
             variable_name=variable_name,
@@ -68,82 +80,76 @@ def run_process3(process2_results, config):
             continue
 
         # Parse JSON dari response LLM
-        from src.llm_synonym import _extract_json
         try:
             json_text = _extract_json(content)
             llm_result = json.loads(json_text)
         except Exception as e:
             print(f"    ERROR parse JSON: {e}")
-            print(f"    Raw response: {content[:200]}")
             continue
 
-        # Ambil data dari LLM result
-        inferred = llm_result.get("inferred_process", llm_result)
-
         # Lookup ontologi berdasarkan keywords dari LLM
-        annotation = build_annotation(inferred, component, variable_name, config)
+        annotation = enrich_with_ontology(llm_result, config)
         annotations.append(annotation)
 
-        print(f"    OK: {annotation['name']}")
+        print(f"    OK: {annotation.get('name', variable_name)}")
 
     return annotations
 
 
-def build_annotation(inferred, component, variable_name, config):
-    """Bangun anotasi final dengan lookup ontologi.
+def enrich_with_ontology(llm_result, config):
+    """Tambahkan ID ontologi ke hasil LLM berdasarkan keywords.
 
     Args:
-        inferred: Dict hasil dari LLM
-        component: Nama komponen CellML
-        variable_name: Nama variabel CellML
+        llm_result: Dict hasil dari LLM (format baru)
         config: Dict yang berisi chebi_dict dan go_dict
 
     Returns:
-        Dict anotasi terstruktur dengan ID ontologi
+        Dict yang sudah dilengkapi ID ontologi
     """
     chebi_dict = config["chebi_dict"]
     go_dict = config["go_dict"]
 
-    # Cari source identity dari CHEBI
-    source_keywords = inferred.get("source_identity_keywords", [])
-    source_identity = None
-    for kw in source_keywords:
-        source_identity = search_ontology(chebi_dict, kw)
-        if source_identity:
-            break
+    # Lookup mediator dari GO
+    mediator_keywords = llm_result.get("mediator_ontology_keywords", [])
+    mediator_id = _lookup_first_match(go_dict, mediator_keywords)
+    llm_result["mediator_ontology_id"] = mediator_id
 
-    # Cari sink identity dari CHEBI
-    sink_keywords = inferred.get("sink_identity_keywords", [])
-    sink_identity = None
-    for kw in sink_keywords:
-        sink_identity = search_ontology(chebi_dict, kw)
-        if sink_identity:
-            break
+    # Lookup participants
+    participants = llm_result.get("participants", [])
+    for participant in participants:
 
-    # Cari mediator identity dari GO
-    mediator_keywords = inferred.get("mediator_identity_keywords", [])
-    mediator_identity = None
-    for kw in mediator_keywords:
-        mediator_identity = search_ontology(go_dict, kw)
-        if mediator_identity:
-            break
+        # Lookup ion dari CHEBI
+        ion_keywords = participant.get("ion_ontology_keywords", [])
+        participant["ion_ontology_id"] = _lookup_first_match(chebi_dict, ion_keywords)
 
-    # Bangun output terstruktur
-    annotation = {
-        "name": inferred.get("name", f"{component.replace('_', ' ').title()}"),
-        "description": inferred.get("description", ""),
-        "source": inferred.get("source", f"source_{variable_name}"),
-        "source_identity": source_identity or "NOT_FOUND",
-        "source_is_part_of": inferred.get("source_location", "extracellular"),
-        "sink": inferred.get("sink", f"sink_{variable_name}"),
-        "sink_identity": sink_identity or "NOT_FOUND",
-        "sink_is_part_of": inferred.get("sink_location", "intracellular"),
-        "mediator": inferred.get("mediator", f"mediator_{variable_name}_channel"),
-        "mediator_identity": mediator_identity or "NOT_FOUND",
-        "model_reference": f"process_{variable_name}",
-        "model_property": f"{component}.{variable_name}",
-        "model_ontology": "opb:OPB_00318",
-        "evidence_sentences": inferred.get("evidence_sentences", [])
-    }
+        # Lookup source dari FMA (hardcoded)
+        source_keywords = participant.get("source_ontology_keywords", [])
+        participant["source_ontology_id"] = _lookup_fma(source_keywords)
 
-    return annotation
+        # Lookup sink dari FMA (hardcoded)
+        sink_keywords = participant.get("sink_ontology_keywords", [])
+        participant["sink_ontology_id"] = _lookup_fma(sink_keywords)
+
+    return llm_result
+
+
+def _lookup_first_match(terms_dict, keywords):
+    """Cari ID ontologi dari daftar keywords, return yang pertama ketemu."""
+    for keyword in keywords:
+        result = search_ontology(terms_dict, keyword)
+        if result:
+            return result
+    return "NOT_FOUND"
+
+
+def _lookup_fma(keywords):
+    """Cari ID FMA dari hardcoded lookup."""
+    for keyword in keywords:
+        keyword_lower = keyword.lower().strip()
+        if keyword_lower in FMA_LOOKUP:
+            return FMA_LOOKUP[keyword_lower]
+        # Coba partial match
+        for fma_key, fma_id in FMA_LOOKUP.items():
+            if keyword_lower in fma_key or fma_key in keyword_lower:
+                return fma_id
+    return "NOT_FOUND"
