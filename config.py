@@ -5,7 +5,7 @@ Konfigurasi project.
 import os
 
 # Model LLM
-MODEL_NAME = "llama3.3"
+MODEL_NAME = "qwen2.5:7b"
 
 # Path dasar
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,29 +24,30 @@ MODELS = [
         "pdf": "hodgkin_huxley.pdf",
         "paper_title": "A quantitative description of membrane current and its application to conduction and excitation in nerve"
     },
-    {
-        "cellml": "jafri_rice_winslow_1998.cellml",
-        "pdf": "jafri_rice_winslow_1998.pdf",
-        "paper_title": "Cardiac Ca2+ Dynamics: The Roles of Ryanodine Receptor Adaptation and Sarcoplasmic Reticulum Load"
-    },
-    {
-        "cellml": "noble1962.cellml",
-        "pdf": "noble1962.pdf",
-        "paper_title": "A modification of the Hodgkin-Huxley equations applicable to Purkinje fibre action and pace-maker potentials"
-    },
-    {
-        "cellml": "luo_rudy_1994.cellml",
-        "pdf": "luo_rudy_1994.pdf",
-        "paper_title": "A dynamic model of the cardiac ventricular action potential"
-    },
-    {
-        "cellml": "luo_rudy_1991.cellml",
-        "pdf": "luo_rudy_1991.pdf",
-        "paper_title": "A model of the ventricular cardiac action potential"
-    },
-    {
-        "cellml": "difrancesco_noble.cellml",
-        "pdf": "difrancesco_noble.pdf",
-        "paper_title": "A model of cardiac electrical activity incorporating ionic pumps and concentration changes"
-    },
+    # {
+    #     "cellml": "jafri_rice_winslow_1998.cellml",
+    #     "pdf": "jafri_rice_winslow_1998.pdf",
+    #     "paper_title": "Cardiac Ca2+ Dynamics: The Roles of Ryanodine Receptor Adaptation and Sarcoplasmic Reticulum Load"
+    # },
+
+    # {
+    #     "cellml": "noble1962.cellml",
+    #     "pdf": "noble1962.pdf",
+    #     "paper_title": "A modification of the Hodgkin-Huxley equations applicable to Purkinje fibre action and pace-maker potentials"
+    # },
+    # {
+    #     "cellml": "luo_rudy_1994.cellml",
+    #     "pdf": "luo_rudy_1994.pdf",
+    #     "paper_title": "A dynamic model of the cardiac ventricular action potential"
+    # },
+    # {
+    #     "cellml": "luo_rudy_1991.cellml",
+    #     "pdf": "luo_rudy_1991.pdf",
+    #     "paper_title": "A model of the ventricular cardiac action potential"
+    # },
+    # {
+    #     "cellml": "difrancesco_noble.cellml",
+    #     "pdf": "difrancesco_noble.pdf",
+    #     "paper_title": "A model of cardiac electrical activity incorporating ionic pumps and concentration changes"
+    # },
 ]

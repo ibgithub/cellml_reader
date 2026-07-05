@@ -1,7 +1,7 @@
 import os
 import libcellml
 
-ALLOWED_UNITS = {"microA_per_cm2", "uA_per_mm2", "nanoA"}
+ALLOWED_UNITS = {"microA_per_cm2", "uA_per_mm2", "uA_per_mmsq", "nanoA"}
 
 def read_cellml(cellml_file):
     variables = []
