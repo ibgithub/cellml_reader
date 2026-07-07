@@ -6,7 +6,7 @@ PROCESS3_PROMPT_TEMPLATE = """You are a **cardiac electrophysiology ontology eng
 
 ## Context
 - **Variable**: {variable_name}
-- **Unit**: {unit}
+- **Unit**: {unit}  
 - **Component**: {component}
 - **Process Type**: Ion channel current
 
@@ -14,6 +14,7 @@ PROCESS3_PROMPT_TEMPLATE = """You are a **cardiac electrophysiology ontology eng
 {evidence_sentences}
 
 ## Your Task
+
 Analyze the supporting sentences and infer the biological process structure. You MUST identify:
 
 1. **ION**: The ion carrying the current (e.g., sodium, potassium, calcium)
@@ -31,35 +32,47 @@ Analyze the supporting sentences and infer the biological process structure. You
 | Chloride (Cl-) | Varies | Check paper context | Check paper context |
 
 ## Output Format (JSON Only)
-{{{{
-  "name": "Human readable process name",
+
+{{
+  "name": "{component_title}",
   "component": "{component}",
   "current_variable": "{variable_name}",
   "mediator": "descriptive_mediator_name",
-  "mediator_ontology_keywords": ["GO_search_term1", "GO_search_term2"],
+  "mediator_ontology_keywords": ["mediator_keyword_1", "mediator_keyword_2"],
   "participants": [
-    {{{{
+    {{
       "ion": "ion_name",
-      "ion_ontology_keywords": ["CHEBI_search_term1", "CHEBI_search_term2"],
-      "source": "compartment_name",
-      "source_ontology_keywords": ["FMA_search_term1", "FMA_search_term2"],
-      "sink": "compartment_name",
-      "sink_ontology_keywords": ["FMA_search_term1", "FMA_search_term2"]
-    }}}}
+      "ion_ontology_keywords": ["ion_keyword_1", "ion_keyword_2"],
+      "source": "source_compartment",
+      "source_ontology_keywords": ["source_keyword_1"],
+      "sink": "sink_compartment",
+      "sink_ontology_keywords": ["sink_keyword_1"]
+    }}
   ]
-}}}}
+}}
 
 ## Critical Rules
-1. **NEVER invent ontology IDs** - ONLY provide search keywords
+
+1. **NEVER invent ontology IDs** - ONLY provide search keywords (e.g., "voltage-gated sodium channel", "sodium", "intracellular")
+
 2. **Use exact keywords from the paper** when possible
-3. **For mediators**, use descriptive names:
+
+3. **Do NOT output generic placeholders** like "GO_search_term1", "CHEBI_search_term1", "FMA_search_term1", "mediator_keyword_1", or similar in the list of keywords. You MUST replace them with real, concrete keywords based on the variable and evidence sentences (e.g. "potassium", "extracellular", "sodium-calcium exchanger").
+
+4. **For mediators**, use descriptive names:
    - Sodium channel: "voltage-gated sodium channel"
    - Potassium channel: "voltage-gated potassium channel"
    - Calcium channel: "voltage-gated calcium channel"
    - Na/K pump: "sodium-potassium ATPase"
    - NCX: "sodium-calcium exchanger"
-4. **For ions**, use standard names: "sodium", "potassium", "calcium", "chloride"
-5. **For compartments**, use standard terms: "intracellular", "extracellular"
-6. **Return ONLY valid JSON** - no explanatory text, no markdown formatting
+
+5. **For ions**, use standard names:
+   - "sodium", "potassium", "calcium", "chloride"
+
+6. **For compartments**, use standard terms:
+   - "intracellular"
+   - "extracellular"
+
+7. **Return ONLY valid JSON** - no explanatory text, no markdown formatting
 
 Now analyze the supporting sentences and produce the annotation:"""

@@ -60,11 +60,13 @@ def run_process3(process2_results, config):
 
         # Buat prompt
         evidence_text = "\n".join(f"- {s}" for s in evidence_sentences)
+        component_title = component.replace('_', ' ').title()
 
         prompt = PROCESS3_PROMPT_TEMPLATE.format(
             variable_name=variable_name,
             unit=unit,
             component=component,
+            component_title=component_title,
             evidence_sentences=evidence_text
         )
 

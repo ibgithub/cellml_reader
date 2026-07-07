@@ -24,23 +24,26 @@ def read_cellml(cellml_file):
 
     print("")
 
-    for i in range(model.componentCount()):
-        component = model.component(i)
+    def extract_variables(comp):
+        if comp.name() == "membrane":
+            return
 
-        if component.name() == "membrane":
-            continue
-
-        for j in range(component.variableCount()):
-            variable = component.variable(j)
-
+        for j in range(comp.variableCount()):
+            variable = comp.variable(j)
             unit_name = variable.units().name() if variable.units() else "N/A"
 
             if unit_name in ALLOWED_UNITS:
+                if not any(v["component"] == comp.name() and v["variable"] == variable.name() for v in variables):
+                    variables.append({
+                        "component": comp.name(),
+                        "variable": variable.name(),
+                        "unit": unit_name
+                    })
 
-                variables.append({
-                    "component": component.name(),
-                    "variable": variable.name(),
-                    "unit": unit_name
-                })
+        for k in range(comp.componentCount()):
+            extract_variables(comp.component(k))
+
+    for i in range(model.componentCount()):
+        extract_variables(model.component(i))
 
     return variables

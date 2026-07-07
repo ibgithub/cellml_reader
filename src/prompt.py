@@ -51,6 +51,8 @@ Instructions:
 
 14. Do NOT wrap the JSON inside markdown (for example, do not use ```json).
 
+15. Generate synonyms and alternative expressions ONLY in English. Do not output translations or characters in other languages (such as Chinese, Japanese, etc.).
+
 Output format:
 
 {{
@@ -61,4 +63,6 @@ Output format:
         ...
     ]
 }}
+
+
 """

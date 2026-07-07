@@ -12,6 +12,14 @@ import json
 import sys
 import os
 
+# Reconfigure stdout/stderr to use UTF-8 on Windows to prevent UnicodeEncodeError
+if sys.platform.startswith('win'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+
 # Tambahkan root folder ke path supaya import bisa jalan
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
