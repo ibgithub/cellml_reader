@@ -70,13 +70,21 @@ def run_process3(process2_results, config):
             evidence_sentences=evidence_text
         )
 
+        from src.database import check_llm_cache, save_llm_cache
+
         # Kirim ke LLM
         try:
-            response = ollama.chat(
-                model=config["model_name"],
-                messages=[{"role": "user", "content": prompt}]
-            )
-            content = response["message"]["content"]
+            cached_content = check_llm_cache(prompt)
+            if cached_content:
+                content = cached_content
+                print("    [LLM Cache Hit] Menggunakan response anotasi dari cache.")
+            else:
+                response = ollama.chat(
+                    model=config["model_name"],
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                content = response["message"]["content"]
+                save_llm_cache(prompt, content)
         except Exception as e:
             print(f"    ERROR LLM: {e}")
             continue
@@ -155,3 +163,70 @@ def _lookup_fma(keywords):
             if keyword_lower in fma_key or fma_key in keyword_lower:
                 return fma_id
     return "NOT_FOUND"
+
+
+def db_lookup_first_match(session, keywords, ontology_type):
+    """Cari ID ontologi di database berdasarkan keywords. Exact match diutamakan, baru substring match."""
+    from src.models import OntologyTerm
+    from sqlalchemy import func
+    if not keywords:
+        return "NOT_FOUND"
+        
+    # 1. Exact match
+    for kw in keywords:
+        kw_clean = kw.strip().lower()
+        if not kw_clean:
+            continue
+        term = session.query(OntologyTerm).filter(
+            OntologyTerm.ontology_type == ontology_type,
+            (func.lower(OntologyTerm.name) == kw_clean)
+        ).first()
+        if term:
+            return term.id
+            
+    # 2. Substring match (jika exact match tidak ketemu)
+    for kw in keywords:
+        kw_clean = kw.strip().lower()
+        if len(kw_clean) < 3: # Hindari pencarian substring yang terlalu pendek
+            continue
+        term = session.query(OntologyTerm).filter(
+            OntologyTerm.ontology_type == ontology_type,
+            (func.lower(OntologyTerm.name).like(f"%{kw_clean}%")) | (OntologyTerm.synonyms.ilike(f"%{kw_clean}%"))
+        ).first()
+        if term:
+            return term.id
+            
+    return "NOT_FOUND"
+
+
+def enrich_with_ontology_db(session, llm_result):
+    """Tambahkan ID ontologi ke hasil LLM menggunakan database query.
+    
+    Args:
+        session: SQLAlchemy session
+        llm_result: Dict hasil dari LLM
+        
+    Returns:
+        Dict yang sudah dilengkapi ID ontologi
+    """
+    # Lookup mediator dari GO
+    mediator_keywords = llm_result.get("mediator_ontology_keywords", [])
+    mediator_id = db_lookup_first_match(session, mediator_keywords, "go")
+    llm_result["mediator_ontology_id"] = mediator_id
+
+    # Lookup participants
+    participants = llm_result.get("participants", [])
+    for participant in participants:
+        # Lookup ion dari CHEBI
+        ion_keywords = participant.get("ion_ontology_keywords", [])
+        participant["ion_ontology_id"] = db_lookup_first_match(session, ion_keywords, "chebi")
+
+        # Lookup source dari FMA (hardcoded)
+        source_keywords = participant.get("source_ontology_keywords", [])
+        participant["source_ontology_id"] = _lookup_fma(source_keywords)
+
+        # Lookup sink dari FMA (hardcoded)
+        sink_keywords = participant.get("sink_ontology_keywords", [])
+        participant["sink_ontology_id"] = _lookup_fma(sink_keywords)
+
+    return llm_result

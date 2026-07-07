@@ -20,6 +20,8 @@ def generate_synonyms(variable_info, paper_title):
     Returns:
         Dict dengan keys "symbolic" dan "textual"
     """
+    from src.database import check_llm_cache, save_llm_cache
+
     prompt = PROMPT_TEMPLATE.format(
         variable=variable_info["variable"],
         component=variable_info["component"],
@@ -27,17 +29,22 @@ def generate_synonyms(variable_info, paper_title):
         paper_title=paper_title
     )
 
-    response = ollama.chat(
-        model=MODEL_NAME,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    content = response["message"]["content"]
+    cached_content = check_llm_cache(prompt)
+    if cached_content:
+        content = cached_content
+        print("    [LLM Cache Hit] Menggunakan response sinonim dari cache.")
+    else:
+        response = ollama.chat(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+        content = response["message"]["content"]
+        save_llm_cache(prompt, content)
 
     print("\n===== RAW LLM RESPONSE =====")
     print(content)
