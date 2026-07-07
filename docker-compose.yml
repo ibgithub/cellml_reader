@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: cellml_db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=cellml_reader
+      - POSTGRES_USER=ml_user
+      - POSTGRES_PASSWORD=ml_user
+    volumes:
+      - ./db_backup.sql:/docker-entrypoint-initdb.d/db_backup.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ml_user -d cellml_reader"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: cellml_web
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://ml_user:ml_user@db:5432/cellml_reader
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    depends_on:
+      db:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:

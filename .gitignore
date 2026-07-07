@@ -7,4 +7,7 @@ output/
 ontology/*.obo
 data/*.pdf
 db_backup.sql
+*.rar
+*.zip
+
 

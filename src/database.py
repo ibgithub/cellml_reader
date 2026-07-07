@@ -5,7 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from src.models import Base, PipelineTask, VariableRun, PdfDocument, PdfSentence, LlmCache, OntologyTerm
 
-DATABASE_URL = "postgresql://ml_user:ml_user@127.0.0.1:5432/cellml_reader"
+import os
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://ml_user:ml_user@127.0.0.1:5432/cellml_reader")
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
