@@ -84,29 +84,29 @@ python main.py
 
 ---
 
-## Cara Menjalankan dengan Docker (Paling Praktis untuk Client)
+## Cara Menjalankan dengan Docker
 
-Jika program ini ingin dibagikan ke client, menggunakan **Docker** adalah pilihan terbaik karena client tidak perlu memasang PostgreSQL, Python, virtual environment, maupun Tesseract OCR secara manual. Semuanya sudah dibungkus otomatis di dalam container Docker.
+Menggunakan **Docker** adalah cara yang sangat praktis karena tidak perlu memasang PostgreSQL, Python, virtual environment, maupun Tesseract OCR secara manual. Semuanya sudah dikonfigurasi otomatis di dalam container Docker.
 
-### Prasyarat Client:
+### Prasyarat:
 1. Sudah memasang **Docker Desktop**.
-2. Sudah memasang **Ollama** di komputernya (host machine) dan men-download model Qwen:
+2. Sudah memasang **Ollama** di komputer host dan men-download model Qwen:
    ```bash
    ollama pull qwen2.5:7b
    ```
 
 ### Langkah Menjalankan:
-1. Salin berkas project beserta berkas `db_backup.sql` ke folder client.
-2. Buka terminal/command prompt di direktori project tersebut, lalu jalankan perintah:
+1. Pastikan berkas `db_backup.sql` berada di folder utama proyek.
+2. Buka terminal/command prompt di direktori proyek tersebut, lalu jalankan perintah:
    ```bash
    docker compose up --build -d
    ```
-3. **Selesai!** Client Anda bisa langsung mengakses aplikasi lewat browser di:
+3. **Selesai!** Aplikasi bisa langsung diakses melalui browser di:
    👉 **[http://localhost:8000](http://localhost:8000)**
 
 *Catatan untuk Docker:*
-* Database PostgreSQL akan otomatis berjalan, membuat database, dan melakukan **restore otomatis dari `db_backup.sql`** saat pertama kali container dibuat.
-* Container web app dikonfigurasi untuk otomatis terhubung dengan Ollama yang berjalan di komputer host (lewat `host.docker.internal:11434`), sehingga client tidak perlu repot mengonfigurasi GPU di dalam Docker.
+* Database PostgreSQL akan otomatis berjalan, membuat database, dan melakukan **restore otomatis dari berkas `db_backup.sql`** saat pertama kali container dijalankan.
+* Container web app dikonfigurasi untuk otomatis terhubung dengan Ollama yang berjalan di komputer host (lewat `host.docker.internal:11434`), sehingga tidak perlu mengonfigurasi GPU di dalam Docker secara manual.
 
 ---
 
