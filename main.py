@@ -4,6 +4,13 @@ from src.models import PipelineTask
 from src.pipeline import run_pipeline_for_task
 
 def main():
+    # Configure console encoding safety for Windows
+    import sys
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(errors='replace')
+
     print("============================================================")
     print("CELLML READER PIPELINE (DATABASE RUN)")
     print("============================================================")

@@ -1,5 +1,10 @@
 import os
 from datetime import datetime
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(errors='replace')
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles

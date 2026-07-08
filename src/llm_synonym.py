@@ -47,7 +47,10 @@ def generate_synonyms(variable_info, paper_title):
         save_llm_cache(prompt, content)
 
     print("\n===== RAW LLM RESPONSE =====")
-    print(content)
+    try:
+        print(content)
+    except UnicodeEncodeError:
+        print(content.encode('ascii', errors='replace').decode('ascii'))
     print("============================\n")
 
     # Ekstrak JSON dari response (handle markdown code block)
