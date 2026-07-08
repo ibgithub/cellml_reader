@@ -125,6 +125,31 @@ def run_stage2_variable(task_id: int, var_run_id: int, session: Session):
     variable_info = var_run.process1_data
     synonyms = generate_synonyms(variable_info, task.paper_title)
 
+    # Safety fallback: tambahkan kata kunci dasar untuk menjamin pencarian context
+    var_name = var_run.variable_name
+    comp_name = var_run.component_name
+    
+    if "symbolic" not in synonyms:
+        synonyms["symbolic"] = []
+    if "textual" not in synonyms:
+        synonyms["textual"] = []
+        
+    # Tambahkan nama variabel
+    if var_name not in synonyms["symbolic"]:
+        synonyms["symbolic"].append(var_name)
+    var_name_clean = var_name.replace("_", "")
+    if var_name_clean not in synonyms["symbolic"]:
+        synonyms["symbolic"].append(var_name_clean)
+        
+    # Tambahkan nama komponen dan kata pertamanya (misal: "potassium" dari "potassium_channel")
+    comp_words = comp_name.replace("_", " ")
+    if comp_words not in synonyms["textual"]:
+        synonyms["textual"].append(comp_words)
+        
+    first_word = comp_name.split("_")[0]
+    if len(first_word) >= 3 and first_word not in synonyms["textual"]:
+        synonyms["textual"].append(first_word)
+
     # 4. Search contexts
     matches = search_context(sentence_texts, synonyms)
     print(f"    Found {len(matches)} matching evidence sentences.")
