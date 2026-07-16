@@ -113,6 +113,29 @@ def generate_synonyms(variable_info, paper_title):
         }
 
 
+def _repair_json(json_text):
+    """Repair a truncated JSON string by adding missing closing braces/brackets."""
+    json_text = json_text.strip()
+    
+    # Remove trailing commas inside arrays or objects before repair
+    # e.g., "key": "value", } -> "key": "value" }
+    json_text = re.sub(r',\s*([}\]])', r'\1', json_text)
+    
+    # Count open and close braces/brackets
+    open_braces = json_text.count('{')
+    close_braces = json_text.count('}')
+    open_brackets = json_text.count('[')
+    close_brackets = json_text.count(']')
+    
+    # Add missing brackets/braces
+    if open_brackets > close_brackets:
+        json_text += ']' * (open_brackets - close_brackets)
+    if open_braces > close_braces:
+        json_text += '}' * (open_braces - close_braces)
+        
+    return json_text
+
+
 def _extract_json(text):
     """Ekstrak JSON dari text LLM response.
 
@@ -121,20 +144,16 @@ def _extract_json(text):
     """
     text = text.strip()
 
-    # Coba langsung parse (kalau sudah bare JSON)
-    if text.startswith("{"):
-        return text
-
     # Coba ambil dari markdown code block: ```json ... ``` atau ``` ... ```
     match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
     if match:
-        return match.group(1).strip()
+        text = match.group(1).strip()
+    else:
+        # Fallback: ambil dari { pertama sampai akhir
+        first = text.find("{")
+        if first != -1:
+            text = text[first:]
 
-    # Fallback: ambil antara { pertama dan } terakhir
-    first = text.find("{")
-    last = text.rfind("}")
-    if first != -1 and last != -1 and last > first:
-        return text[first:last + 1]
-
-    # Kalau tetap gagal, kembalikan text asli (biar json.loads yang raise error)
+    # Coba perbaiki JSON jika terpotong
+    text = _repair_json(text)
     return text
