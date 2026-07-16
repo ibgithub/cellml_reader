@@ -309,3 +309,63 @@ def run_pipeline_for_task(task_id: int):
         
         session.commit()
         print(f"\nTask {task_id} finished. Status: {task.status}")
+        
+        if task.status == "completed":
+            try:
+                export_task_to_json(task_id, session)
+            except Exception as e:
+                print(f"[Export Error] Failed to auto-export JSON files: {e}")
+
+
+def export_task_to_json(task_id: int, session: Session):
+    """Export task results from database to output JSON files (standard and date-suffixed)."""
+    task = session.query(PipelineTask).filter(PipelineTask.id == task_id).first()
+    if not task:
+        return
+        
+    variables = session.query(VariableRun).filter(VariableRun.task_id == task_id).order_by(VariableRun.id).all()
+    
+    p2_results = []
+    p3_results = []
+    for var in variables:
+        if var.process2_data:
+            p2_results.append(var.process2_data)
+        if var.process3_data:
+            p3_results.append(var.process3_data)
+            
+    output_p2 = {
+        "paper_title": task.paper_title,
+        "pdf_file": task.pdf_file,
+        "total_variables": len(p2_results),
+        "results": p2_results
+    }
+    
+    from config import BASE_DIR
+    output_dir = os.path.join(BASE_DIR, "output")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    base_name = task.cellml_file.replace(".cellml", "")
+    date_str = datetime.now().strftime("%Y%m%d")
+    
+    # Standard paths
+    p2_file = os.path.join(output_dir, f"{base_name}_output.json")
+    p3_file = os.path.join(output_dir, f"{base_name}_annotations.json")
+    
+    # Date-suffixed paths
+    p2_file_date = os.path.join(output_dir, f"{base_name}_output_{date_str}.json")
+    p3_file_date = os.path.join(output_dir, f"{base_name}_annotations_{date_str}.json")
+    
+    # Write standard files
+    with open(p2_file, "w", encoding="utf-8") as f:
+        json.dump(output_p2, f, indent=2, ensure_ascii=False)
+    with open(p3_file, "w", encoding="utf-8") as f:
+        json.dump(p3_results, f, indent=2, ensure_ascii=False)
+        
+    # Write date-suffixed files
+    with open(p2_file_date, "w", encoding="utf-8") as f:
+        json.dump(output_p2, f, indent=2, ensure_ascii=False)
+    with open(p3_file_date, "w", encoding="utf-8") as f:
+        json.dump(p3_results, f, indent=2, ensure_ascii=False)
+        
+    print(f"    [Export] Saved JSON outputs to {output_dir} (standard & date-suffixed: {date_str})")
+

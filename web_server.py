@@ -208,13 +208,21 @@ def reprocess_single_variable(id: int, req: ReprocessVariableRequest, background
                 if pending_count == 0:
                     p_task.status = "completed"
                     p_task.completed_at = datetime.now()
+                    session.commit()
+                    
+                    # Auto-export JSON outputs (both standard & date-suffixed)
+                    try:
+                        from src.pipeline import export_task_to_json
+                        export_task_to_json(task_id, session)
+                    except Exception as ex:
+                        print(f"[Background Reprocess Export Error] {ex}")
                 else:
                     failed_count = session.query(VariableRun).filter(
                         VariableRun.task_id == task_id, 
                         VariableRun.status == "failed"
                     ).count()
                     p_task.status = "failed" if failed_count > 0 else "running"
-                session.commit()
+                    session.commit()
             except Exception as e:
                 print(f"[Background Variable Reprocess] Error: {e}")
                 
