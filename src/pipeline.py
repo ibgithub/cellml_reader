@@ -342,7 +342,9 @@ def export_task_to_json(task_id: int, session: Session):
     
     from config import BASE_DIR
     output_dir = os.path.join(BASE_DIR, "output")
+    backup_dir = os.path.join(output_dir, "backup")
     os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(backup_dir, exist_ok=True)
     
     base_name = task.cellml_file.replace(".cellml", "")
     date_str = datetime.now().strftime("%Y%m%d")
@@ -351,9 +353,9 @@ def export_task_to_json(task_id: int, session: Session):
     p2_file = os.path.join(output_dir, f"{base_name}_output.json")
     p3_file = os.path.join(output_dir, f"{base_name}_annotations.json")
     
-    # Date-suffixed paths
-    p2_file_date = os.path.join(output_dir, f"{base_name}_output_{date_str}.json")
-    p3_file_date = os.path.join(output_dir, f"{base_name}_annotations_{date_str}.json")
+    # Date-suffixed paths (in backup folder)
+    p2_file_date = os.path.join(backup_dir, f"{base_name}_output_{date_str}.json")
+    p3_file_date = os.path.join(backup_dir, f"{base_name}_annotations_{date_str}.json")
     
     # Write standard files
     with open(p2_file, "w", encoding="utf-8") as f:
@@ -361,11 +363,11 @@ def export_task_to_json(task_id: int, session: Session):
     with open(p3_file, "w", encoding="utf-8") as f:
         json.dump(p3_results, f, indent=2, ensure_ascii=False)
         
-    # Write date-suffixed files
+    # Write date-suffixed files (in backup folder)
     with open(p2_file_date, "w", encoding="utf-8") as f:
         json.dump(output_p2, f, indent=2, ensure_ascii=False)
     with open(p3_file_date, "w", encoding="utf-8") as f:
         json.dump(p3_results, f, indent=2, ensure_ascii=False)
         
-    print(f"    [Export] Saved JSON outputs to {output_dir} (standard & date-suffixed: {date_str})")
+    print(f"    [Export] Saved JSON outputs to {output_dir} and backup to {backup_dir} ({date_str})")
 
