@@ -231,7 +231,8 @@ def run_stage3_variable(task_id: int, var_run_id: int, session: Session):
         else:
             response = ollama.chat(
                 model=MODEL_NAME,
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                format="json"
             )
             content = response["message"]["content"]
             save_llm_cache(prompt, content)
