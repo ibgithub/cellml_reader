@@ -4,8 +4,7 @@ import json
 from src.database import init_db, get_session
 from src.models import PipelineTask, OntologyTerm
 
-CHEBI_OBO = r"C:\Imam\projects\cellml_reader\ontology\chebi.obo"
-GO_OBO = r"C:\Imam\projects\cellml_reader\ontology\go.obo"
+from config import CHEBI_OBO, GO_OBO
 
 INITIAL_TASKS = [
     {

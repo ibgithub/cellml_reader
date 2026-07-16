@@ -12,9 +12,7 @@ from src.context_search import search_context
 from src.process3_prompt import PROCESS3_PROMPT_TEMPLATE
 from src.process3 import enrich_with_ontology_db
 import ollama
-from config import MODEL_NAME
-
-DATA_DIR = r"C:\Imam\projects\cellml_reader\data"
+from config import MODEL_NAME, DATA_DIR
 
 def run_stage1(task_id: int, session: Session):
     """STAGE 1: CellML variable extraction."""
