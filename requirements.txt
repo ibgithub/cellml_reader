@@ -6,3 +6,4 @@ ollama==0.4.7
 pdfplumber
 unstructured[pdf]
 libcellml
+google-generativeai

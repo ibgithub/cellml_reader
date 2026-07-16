@@ -26,6 +26,8 @@ services:
       - DATABASE_URL=postgresql://ml_user:ml_user@db:5432/cellml_reader
       - OLLAMA_HOST=http://host.docker.internal:11434
       - PYTHONUNBUFFERED=1
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER}
     command: uvicorn web_server:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./data:/app/data

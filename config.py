@@ -4,9 +4,11 @@ Konfigurasi project.
 
 import os
 
-# Model LLM
-# MODEL_NAME = "qwen2.5:7b"
-MODEL_NAME = "medllama2:latest"
+# Model LLM Configuration
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # "ollama" atau "gemini"
+MODEL_NAME = "qwen2.5:7b"  # Model default Ollama jika menggunakan provider ollama
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = "gemini-1.5-flash"  # Model default Gemini
 
 # Path dasar
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

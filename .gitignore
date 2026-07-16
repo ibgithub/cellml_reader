@@ -8,6 +8,7 @@ ontology/*.obo
 data/*.pdf
 db_backup.sql
 *.rar
-*.zip
 
 
+# Credentials and Environment
+.env

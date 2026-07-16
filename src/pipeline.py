@@ -12,7 +12,7 @@ from src.context_search import search_context
 from src.process3_prompt import PROCESS3_PROMPT_TEMPLATE
 from src.process3 import enrich_with_ontology_db
 import ollama
-from config import MODEL_NAME, DATA_DIR
+from config import MODEL_NAME, DATA_DIR, LLM_PROVIDER, GEMINI_API_KEY, GEMINI_MODEL
 
 def run_stage1(task_id: int, session: Session):
     """STAGE 1: CellML variable extraction."""
@@ -229,12 +229,26 @@ def run_stage3_variable(task_id: int, var_run_id: int, session: Session):
             content = cached_content
             print("    [LLM Cache Hit] Menggunakan response anotasi dari cache.")
         else:
-            response = ollama.chat(
-                model=MODEL_NAME,
-                messages=[{"role": "user", "content": prompt}],
-                format="json"
-            )
-            content = response["message"]["content"]
+            if LLM_PROVIDER == "gemini" and GEMINI_API_KEY:
+                import google.generativeai as genai
+                genai.configure(api_key=GEMINI_API_KEY)
+                model = genai.GenerativeModel(GEMINI_MODEL)
+                response = model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        response_mime_type="application/json",
+                        temperature=0.1
+                    )
+                )
+                content = response.text
+            else:
+                response = ollama.chat(
+                    model=MODEL_NAME,
+                    messages=[{"role": "user", "content": prompt}],
+                    format="json"
+                )
+                content = response["message"]["content"]
+                
             save_llm_cache(prompt, content)
 
         json_text = _extract_json(content)

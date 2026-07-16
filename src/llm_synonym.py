@@ -7,7 +7,7 @@ import re
 import ollama
 
 from src.prompt import PROMPT_TEMPLATE
-from config import MODEL_NAME
+from config import MODEL_NAME, LLM_PROVIDER, GEMINI_API_KEY, GEMINI_MODEL
 
 
 def generate_synonyms(variable_info, paper_title):
@@ -34,17 +34,31 @@ def generate_synonyms(variable_info, paper_title):
         content = cached_content
         print("    [LLM Cache Hit] Menggunakan response sinonim dari cache.")
     else:
-        response = ollama.chat(
-            model=MODEL_NAME,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            format="json"
-        )
-        content = response["message"]["content"]
+        if LLM_PROVIDER == "gemini" and GEMINI_API_KEY:
+            import google.generativeai as genai
+            genai.configure(api_key=GEMINI_API_KEY)
+            model = genai.GenerativeModel(GEMINI_MODEL)
+            response = model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1
+                )
+            )
+            content = response.text
+        else:
+            response = ollama.chat(
+                model=MODEL_NAME,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                format="json"
+            )
+            content = response["message"]["content"]
+            
         save_llm_cache(prompt, content)
 
     print("\n===== RAW LLM RESPONSE =====")
