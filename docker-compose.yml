@@ -26,6 +26,7 @@ services:
       - DATABASE_URL=postgresql://ml_user:ml_user@db:5432/cellml_reader
       - OLLAMA_HOST=http://host.docker.internal:11434
       - PYTHONUNBUFFERED=1
+    command: uvicorn web_server:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./data:/app/data
       - ./output:/app/output

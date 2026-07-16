@@ -66,12 +66,22 @@ def generate_synonyms(variable_info, paper_title):
         # Regex fallback for Symbolic
         sym_match = re.search(r'(?:Symbolic|symbolic|SYMBOLIC):?([\s\S]*?)(?:Textual|textual|TEXTUAL|$)', content)
         if sym_match:
-            symbolic = [line.strip('*- \t\u2022').split('(')[0].strip() for line in sym_match.group(1).strip().split('\n') if line.strip()]
+            for line in sym_match.group(1).split('\n'):
+                line_strip = line.strip()
+                if line_strip.startswith(('-', '*', '\u2022', '1.', '2.', '3.', '4.', '5.')):
+                    val = line_strip.strip('*- \t\u2022123456789.').split('(')[0].strip()
+                    if val:
+                        symbolic.append(val)
             
         # Regex fallback for Textual
         text_match = re.search(r'(?:Textual|textual|TEXTUAL):?([\s\S]*?)$', content)
         if text_match:
-            textual = [line.strip('*- \t\u2022').split('(')[0].strip() for line in text_match.group(1).strip().split('\n') if line.strip()]
+            for line in text_match.group(1).split('\n'):
+                line_strip = line.strip()
+                if line_strip.startswith(('-', '*', '\u2022', '1.', '2.', '3.', '4.', '5.')):
+                    val = line_strip.strip('*- \t\u2022123456789.').split('(')[0].strip()
+                    if val:
+                        textual.append(val)
             
         # Clean up empty items
         symbolic = [s for s in symbolic if s]
