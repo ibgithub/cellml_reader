@@ -5,7 +5,8 @@ Konfigurasi project.
 import os
 
 # Model LLM
-MODEL_NAME = "qwen2.5:7b"
+# MODEL_NAME = "qwen2.5:7b"
+MODEL_NAME = "medllama2:latest"
 
 # Path dasar
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

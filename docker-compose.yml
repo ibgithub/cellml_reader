@@ -28,6 +28,10 @@ services:
     volumes:
       - ./data:/app/data
       - ./output:/app/output
+      - ./src:/app/src
+      - ./config.py:/app/config.py
+      - ./web_server.py:/app/web_server.py
+      - ./static:/app/static
     depends_on:
       db:
         condition: service_healthy
