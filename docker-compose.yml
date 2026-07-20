@@ -28,6 +28,7 @@ services:
       - PYTHONUNBUFFERED=1
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - LLM_PROVIDER=${LLM_PROVIDER}
+      - MODEL_NAME=${MODEL_NAME}
     command: uvicorn web_server:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./data:/app/data

@@ -6,7 +6,7 @@ import os
 
 # Model LLM Configuration
 LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")  # "ollama" atau "gemini"
-MODEL_NAME = "qwen2.5:7b"  # Model default Ollama jika menggunakan provider ollama
+MODEL_NAME = os.getenv("MODEL_NAME", "qwen2.5:7b")  # Model default Ollama jika menggunakan provider ollama
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-flash-latest"  # Model default Gemini (Stable & Free Tier Enabled)
 
