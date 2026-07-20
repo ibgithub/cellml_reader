@@ -127,11 +127,22 @@ def run_stage2_variable(task_id: int, var_run_id: int, session: Session):
     var_name = var_run.variable_name
     comp_name = var_run.component_name
     
-    # Ensure synonyms contains list of strings (handling cases where LLMs like Gemma 3 1B return plain strings)
+    # Ensure synonyms contains flat list of strings (handling cases where LLMs like Gemma 3 1B return plain strings or nested lists)
+    def _flatten_list(lst):
+        flat = []
+        for item in lst:
+            if isinstance(item, list):
+                flat.extend(_flatten_list(item))
+            elif item is not None:
+                flat.append(str(item))
+        return flat
+
     if "symbolic" in synonyms:
         if isinstance(synonyms["symbolic"], str):
             synonyms["symbolic"] = [synonyms["symbolic"]]
-        elif not isinstance(synonyms["symbolic"], list):
+        elif isinstance(synonyms["symbolic"], list):
+            synonyms["symbolic"] = _flatten_list(synonyms["symbolic"])
+        else:
             synonyms["symbolic"] = []
     else:
         synonyms["symbolic"] = []
@@ -139,7 +150,9 @@ def run_stage2_variable(task_id: int, var_run_id: int, session: Session):
     if "textual" in synonyms:
         if isinstance(synonyms["textual"], str):
             synonyms["textual"] = [synonyms["textual"]]
-        elif not isinstance(synonyms["textual"], list):
+        elif isinstance(synonyms["textual"], list):
+            synonyms["textual"] = _flatten_list(synonyms["textual"])
+        else:
             synonyms["textual"] = []
     else:
         synonyms["textual"] = []
