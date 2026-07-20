@@ -166,6 +166,73 @@ def run_stage2_variable(task_id: int, var_run_id: int, session: Session):
     print(f"    STAGE 2 completed for {var_run.variable_name}.")
 
 
+def _parse_stage3_regex_fallback(content: str, variable_name: str, component_name: str) -> dict:
+    """Fallback parser using regex to extract structured data from non-JSON LLM responses in Stage 3."""
+    import re
+    
+    # Extract mediator
+    mediator = "NOT_FOUND"
+    mediator_match = re.search(r'(?:mediator|channel|carrier|pump)\s*:\s*([^\n,]+)', content, re.IGNORECASE)
+    if mediator_match:
+        mediator = mediator_match.group(1).strip().strip('"\'')
+        
+    # Extract mediator keywords
+    mediator_keywords = []
+    keywords_match = re.search(r'mediator_ontology_keywords\s*:\s*\[(.*?)\]', content, re.IGNORECASE)
+    if keywords_match:
+        mediator_keywords = [k.strip().strip('"\'') for k in keywords_match.group(1).split(',') if k.strip()]
+    if not mediator_keywords and mediator != "NOT_FOUND":
+        mediator_keywords = [mediator]
+        
+    # Extract ion
+    ion = "NOT_FOUND"
+    ion_match = re.search(r'(?:ion|transported)\s*:\s*([^\n,]+)', content, re.IGNORECASE)
+    if ion_match:
+        ion = ion_match.group(1).strip().strip('"\'[]')
+        
+    # Extract source
+    source = "NOT_FOUND"
+    source_match = re.search(r'(?:source|from)\s*:\s*([^\n,]+)', content, re.IGNORECASE)
+    if source_match:
+        source = source_match.group(1).strip().strip('"\'')
+        
+    # Extract sink
+    sink = "NOT_FOUND"
+    sink_match = re.search(r'(?:sink|to)\s*:\s*([^\n,]+)', content, re.IGNORECASE)
+    if sink_match:
+        sink = sink_match.group(1).strip().strip('"\'')
+        
+    # Standardize names
+    if "extracellular" in source.lower():
+        source = "extracellular"
+    elif "intracellular" in source.lower() or "cytosol" in source.lower() or "cytoplasm" in source.lower():
+        source = "intracellular"
+        
+    if "extracellular" in sink.lower():
+        sink = "extracellular"
+    elif "intracellular" in sink.lower() or "cytosol" in sink.lower() or "cytoplasm" in sink.lower():
+        sink = "intracellular"
+        
+    # Build participant dict
+    participant = {
+        "ion": ion,
+        "ion_ontology_keywords": [ion] if ion != "NOT_FOUND" else [],
+        "source": source,
+        "source_ontology_keywords": [source] if source != "NOT_FOUND" else [],
+        "sink": sink,
+        "sink_ontology_keywords": [sink] if sink != "NOT_FOUND" else []
+    }
+    
+    return {
+        "name": f"{variable_name} Process",
+        "component": component_name,
+        "current_variable": variable_name,
+        "mediator": mediator,
+        "mediator_ontology_keywords": mediator_keywords,
+        "participants": [participant]
+    }
+
+
 def run_stage3_variable(task_id: int, var_run_id: int, session: Session):
     """STAGE 3: Run LLM Process 3 biological annotation and map ontologies via database query."""
     task = session.query(PipelineTask).filter(PipelineTask.id == task_id).first()
@@ -251,8 +318,12 @@ def run_stage3_variable(task_id: int, var_run_id: int, session: Session):
                 
             save_llm_cache(prompt, content)
 
-        json_text = _extract_json(content)
-        llm_result = json.loads(json_text)
+        try:
+            json_text = _extract_json(content)
+            llm_result = json.loads(json_text)
+        except Exception as json_err:
+            print(f"    [Stage 3 JSON Parsing Failed] {json_err}. Menggunakan Regex Fallback parser...")
+            llm_result = _parse_stage3_regex_fallback(content, var_run.variable_name, var_run.component_name)
         
         # Query ontology in database
         annotation = enrich_with_ontology_db(session, llm_result)
