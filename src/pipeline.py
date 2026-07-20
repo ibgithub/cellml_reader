@@ -127,9 +127,21 @@ def run_stage2_variable(task_id: int, var_run_id: int, session: Session):
     var_name = var_run.variable_name
     comp_name = var_run.component_name
     
-    if "symbolic" not in synonyms:
+    # Ensure synonyms contains list of strings (handling cases where LLMs like Gemma 3 1B return plain strings)
+    if "symbolic" in synonyms:
+        if isinstance(synonyms["symbolic"], str):
+            synonyms["symbolic"] = [synonyms["symbolic"]]
+        elif not isinstance(synonyms["symbolic"], list):
+            synonyms["symbolic"] = []
+    else:
         synonyms["symbolic"] = []
-    if "textual" not in synonyms:
+
+    if "textual" in synonyms:
+        if isinstance(synonyms["textual"], str):
+            synonyms["textual"] = [synonyms["textual"]]
+        elif not isinstance(synonyms["textual"], list):
+            synonyms["textual"] = []
+    else:
         synonyms["textual"] = []
         
     # Tambahkan nama variabel
