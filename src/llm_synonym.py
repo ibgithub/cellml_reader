@@ -142,7 +142,8 @@ def _extract_json(text):
     LLM kadang bungkus JSON dalam ```json ... ``` code block.
     Fungsi ini coba ambil JSON-nya, apapun formatnya.
     """
-    text = text.strip()
+    # Remove DeepSeek-R1 thinking block if present
+    text = re.sub(r'<think>[\s\S]*?</think>', '', text).strip()
 
     # Coba ambil dari markdown code block: ```json ... ``` atau ``` ... ```
     match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
